@@ -1,0 +1,186 @@
+#Make sure all of the following runs first:
+import numpy as np
+%matplotlib inline
+from matplotlib import pyplot as plt
+from matplotlib import rcParams
+rcParams['xtick.direction'] = 'in'
+rcParams['ytick.direction'] = 'in'
+rcParams['errorbar.capsize'] = 3 
+rcParams['lines.markersize'] = 10
+rcParams['figure.figsize'] = 8, 5
+import matplotlib.pyplot as plt 
+import numpy as np 
+import pandas as pd 
+from scipy.optimize import curve_fit 
+import matplotlib.ticker as ticker 
+%matplotlib inline 
+%config InlineBackend.figure_format = 'retina' 
+from IPython.display import display, Markdown
+from scipy.signal import find_peaks, peak_prominences, chirp, peak_widths
+
+#Now the rest should function properly with th raw data given in Moodle. Simply change the names of each excel spreadsheet to c1, c2, c3, or c4.
+
+start = input("C1, C2, C3, or C4: ")
+
+aarr=[]
+if start=="C1":
+    a=9.5
+    namearr=['C1 9.5 V','C1 9 V','C1 8.5 V','C1 8 V','C1 7.5 V','C1 7 V','C1 6.5 V','C1 6 V','C1 5.5 V','C1 5 V']
+
+    for x in namearr:
+        data = pd.read_excel('c1.xlsx', x,
+                             names=('S','CH1','CH2'),
+                             usecols=(0,1,2),
+                             nrows=1401)
+        data=data.drop(0)
+        peaking=data['CH2']
+        peaks, _ = find_peaks(peaking, distance=20, prominence=(0.0005,0.08))
+        prev=peaks[::-1]
+        b=-0.000001688+(prev[0]*0.000000005)
+        b=1/(b)
+        aarr+=[a,b]
+        a=a-0.5
+
+elif start=="C2":
+    a=9.5
+    namearr=['C2 9.5 V','C2 9 V','C2 8.5 V','C2 8 V','C2 7.5 V','C2 7 V','C2 6.5 V','C2 6 V','C2 5.5 V','C2 5 V']
+
+    for x in namearr:
+        data = pd.read_excel('c2.xlsx', x,
+                             names=('S','CH1','CH2'),
+                             usecols=(0,1,2),
+                             nrows=1401)
+        data=data.drop(0)
+        peaking=data['CH2']
+        peaks, _ = find_peaks(peaking, distance=50, prominence=(0.0005,0.08))
+        prev=peaks[::-1]
+        b=-0.000001688+(prev[0]*0.000000005)
+        b=1/(b)
+        aarr+=[a,b]
+        a=a-0.5
+        
+elif start=="C3":
+    a=9.5
+    namearr=['C3 9.5 V','C3 9 V','C3 8.5 V','C3 8 V','C3 7.5 V','C3 7 V','C3 6.5 V','C3 6 V','C3 5.5 V','C3 5 V','C3 4.5 V','C3 4 V']
+
+    for x in namearr:
+        data = pd.read_excel('c3.xlsx', x,
+                             names=('S','CH1','CH2'),
+                             usecols=(0,1,2),
+                             nrows=1401)
+        data=data.drop(0)
+        peaking=data['CH2']
+        peaks, _ = find_peaks(peaking, distance=50, prominence=(0.0005,0.008))
+        prev=peaks[::-1]
+        b=-0.000001452+(prev[0]*0.000000005)
+        b=1/(b)
+        aarr+=[a,b]
+        a=a-0.5
+
+elif start=="C4":
+    a=9.5
+    namearr=['C4 9.5 V','C4 9 V','C4 8.5 V','C4 8 V','C4 7.5 V','C4 7 V','C4 6.5 V','C4 6 V','C4 5.5 V','C4 5 V']
+
+    for x in namearr:
+        data = pd.read_excel('c4.xlsx', x,
+                             names=('S','CH1','CH2'),
+                             usecols=(0,1,2),
+                             nrows=1401)
+        data=data.drop(0)
+        peaking=data['CH2']
+        peaks, _ = find_peaks(peaking, distance=50, prominence=(0.0005,0.008))
+        prev=peaks[::-1]
+        b=-0.0000009479999+(prev[0]*0.000000005)
+        b=1/(b)
+        aarr+=[a,b]
+        a=a-0.5
+        
+else:
+    print("Not applicable")
+
+i=0
+y=0
+volt=[]
+time=[]
+for x in aarr:
+    if i==0:
+        volt+=[aarr[y]]
+        i=i+1
+    else:
+        time+=[aarr[y]]
+        i=i-1
+    y=y+1
+
+table = {'volt': volt, 'time': time}
+df = pd.DataFrame(data=table)
+
+fig = plt.figure(figsize=(10,10))
+ax = fig.add_subplot(1,1,1)
+ax.errorbar(df.time,           
+                 df.volt,   
+                 marker='o',             
+                 markersize = 6,
+                 markerfacecolor = 'black',
+                 color='black',          
+                 linestyle='none',       
+                 capsize=7,              
+                 )
+
+ax.tick_params(direction='inout',
+                   length=7,
+                   color='black',
+                   width='1',
+                   right='true',
+                   top='true',
+                   )
+plt.rcParams.update({'font.size':20})
+
+ax.set_xlabel('Time / s^-1 (x10^4)')
+ax.set_ylabel('Volts / V')
+
+def line(x, slope, intercept): 
+    return slope*x + intercept 
+
+popt, pcov = curve_fit(line,df.time,df.volt)
+slope = popt[0]
+intercept = popt[1]
+err_slope = np.sqrt(float(pcov[0][0]))
+err_intercept = np.sqrt(float(pcov[1][1]))
+
+ax.plot(df.time, df.time*slope+intercept, 
+             linestyle='-',
+             color='black',
+             label='Best fit')
+
+plt.show()
+
+
+#The following will give the peaks of each graph, which can be cross referenced to the excel data:
+data = pd.read_excel('c3.xlsx', 'C3 7 V',  #<--------------- Change this to fit whichever set of data you're using
+                     names=('S','CH1','CH2','time'),
+                     usecols=(0,1,2,3),
+                     nrows=1401)
+data=data.drop(0)
+data
+
+peaking=data['CH2']
+crosses = find_peaks(peaking)
+
+peaks, _ = find_peaks(peaking, distance=50, prominence=(0.0005,0.08))
+
+prominences = peak_prominences(peaking, peaks)[0]
+
+results_half = peak_widths(peaking, peaks, rel_height=0.5)
+results_full = peak_widths(peaking, peaks, rel_height=1)
+
+plt.subplot(1, 1, 1)
+plt.plot(peaks, peaking[peaks], "xr"); plt.plot(peaking); plt.legend(['peaks'])
+plt.hlines(*results_half[1:], color="C2")
+plt.hlines(*results_full[1:], color="C3")
+
+print(peaks)
+print(results_half)
+
+
+
+
